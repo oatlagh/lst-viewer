@@ -1,10 +1,10 @@
 /* LST Viewer – Service Worker des Laders.
  * Liefert die im Browser entschlüsselten App-Dateien (Cache „lst-app“) unter app/… aus
  * und hält den Lader selbst für den Offline-Start vor. */
-const SHELL = 'lst-loader-1', APP = 'lst-app';
+const SHELL = 'lst-loader-2', APP = 'lst-app';
 const BASE = new URL('./', self.location).href;
 const SHELL_FILES = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
-self.addEventListener('install', e => e.waitUntil(caches.open(SHELL).then(c => c.addAll(SHELL_FILES)).then(() => self.skipWaiting())));
+self.addEventListener('install', e => e.waitUntil(caches.open(SHELL).then(c => Promise.all(SHELL_FILES.map(f => c.add(f).catch(() => null)))).then(() => self.skipWaiting())));
 self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
 self.addEventListener('fetch', e => {
   const req = e.request; if (req.method !== 'GET') return;

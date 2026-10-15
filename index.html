@@ -64,7 +64,14 @@ button:disabled{opacity:.6}
   // ?sperren → entschlüsselte App und gemerkten Schlüssel von diesem Gerät entfernen
   if (new URLSearchParams(location.search).has('sperren')) { await caches.delete('lst-app'); await keyClear(); ls.del('lst-app-version'); msg('App gesperrt. Zum Entsperren Passwort eingeben.'); }
 
-  try { await navigator.serviceWorker.register('loader-sw.js'); await navigator.serviceWorker.ready; } catch (e) { msg('Service Worker konnte nicht starten: ' + e.message, true); return; }
+  msg('Starte …');
+  try {
+    await navigator.serviceWorker.register('loader-sw.js');
+    const ok = await Promise.race([navigator.serviceWorker.ready.then(() => true), new Promise(r => setTimeout(() => r(false), 10000))]);
+    if (!ok) { msg('Start dauert zu lange – bitte Seite neu laden. Fehlt eine Datei (loader-sw.js)?', true); return; }
+  } catch (e) { msg('Service Worker konnte nicht starten: ' + e.message, true); return; }
+  if (!navigator.serviceWorker.controller) { location.reload(); return; }  // erster Start: Seite einmal unter Kontrolle des SW neu laden
+  if ($('#msg').textContent === 'Starte …') msg('');
 
   const installed = ls.get('lst-app-version');
   const hasApp = !!(await (await caches.open('lst-app')).match(BASE + 'app/index.html'));
